@@ -971,22 +971,34 @@ export class MockServerService {
 
     if (!rootCollection) return []; // Collection doesn't exist
 
-    const ids = [rootCollectionId];
-    const children = await this.prisma.userCollection.findMany({
-      where: { parentID: rootCollectionId },
-      select: { id: true },
-    });
+    // Use BFS to collect all descendant collection IDs
+    // This reduces N+1 queries to a single query per tree level
+    const allIds: string[] = [rootCollectionId];
+    const toProcess: string[] = [rootCollectionId];
 
-    for (const child of children) {
-      const childIds = await this.getAllUserCollectionIds(child.id);
-      ids.push(...childIds);
+    while (toProcess.length > 0) {
+      // Process current level
+      const currentLevel = [...toProcess];
+      toProcess.length = 0;
+
+      // Fetch all children for this level in a single query
+      const children = await this.prisma.userCollection.findMany({
+        where: { parentID: { in: currentLevel } },
+        select: { id: true },
+      });
+
+      // Add children to results and next processing level
+      for (const child of children) {
+        allIds.push(child.id);
+        toProcess.push(child.id);
+      }
     }
 
-    return ids;
+    return allIds;
   }
 
   /**
-   * Get all team collection IDs including children (recursive)
+   * Get all team collection IDs including children (BFS traversal)
    */
   private async getAllTeamCollectionIds(
     rootCollectionId: string,
@@ -998,18 +1010,30 @@ export class MockServerService {
 
     if (!rootCollection) return []; // Collection doesn't exist
 
-    const ids = [rootCollectionId];
-    const children = await this.prisma.teamCollection.findMany({
-      where: { parentID: rootCollectionId },
-      select: { id: true },
-    });
+    // Use BFS to collect all descendant collection IDs
+    // This reduces N+1 queries to a single query per tree level
+    const allIds: string[] = [rootCollectionId];
+    const toProcess: string[] = [rootCollectionId];
 
-    for (const child of children) {
-      const childIds = await this.getAllTeamCollectionIds(child.id);
-      ids.push(...childIds);
+    while (toProcess.length > 0) {
+      // Process current level
+      const currentLevel = [...toProcess];
+      toProcess.length = 0;
+
+      // Fetch all children for this level in a single query
+      const children = await this.prisma.teamCollection.findMany({
+        where: { parentID: { in: currentLevel } },
+        select: { id: true },
+      });
+
+      // Add children to results and next processing level
+      for (const child of children) {
+        allIds.push(child.id);
+        toProcess.push(child.id);
+      }
     }
 
-    return ids;
+    return allIds;
   }
 
   /**
