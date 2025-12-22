@@ -831,21 +831,22 @@ export class MockServerService {
   }
 
   /**
-   * OPTIMIZED: Find example by ID or name from already-fetched requests
-   * This avoids loading all examples when user specifies exact match
+   * Build index maps for fast example lookup
+   * Returns Maps for O(1) ID and name lookups with case-insensitive keys
    */
-  private findExampleByIdOrName(
+  private buildExampleIndex(
     requests: Array<{ id: string; mockExamples: any }>,
-    exampleId?: string,
-    exampleName?: string,
     method?: string,
   ) {
-    // Search through examples
+    const idMap = new Map<string, any>();
+    const nameMap = new Map<string, any>();
+    const allExamples: any[] = [];
+
     for (const request of requests) {
       const mockExamples = request.mockExamples as any;
       if (mockExamples?.examples && Array.isArray(mockExamples.examples)) {
         for (const exampleData of mockExamples.examples) {
-          // Check if method matches (if specified)
+          // Filter by method if specified
           if (
             method &&
             exampleData.method?.toUpperCase() !== method.toUpperCase()
@@ -856,15 +857,66 @@ export class MockServerService {
           const parsedExample = this.parseExample(exampleData, request.id);
           if (!parsedExample) continue;
 
-          // Check for ID match
-          if (exampleId && parsedExample.id === exampleId) {
-            return parsedExample;
+          allExamples.push(parsedExample);
+
+          // Index by ID (case-insensitive)
+          const idKey = parsedExample.id.toLowerCase();
+          if (!idMap.has(idKey)) {
+            idMap.set(idKey, parsedExample);
           }
 
-          // Check for name match
-          if (exampleName && parsedExample.name === exampleName) {
-            return parsedExample;
+          // Index by name (case-insensitive)
+          const nameKey = parsedExample.name.toLowerCase();
+          if (!nameMap.has(nameKey)) {
+            nameMap.set(nameKey, parsedExample);
           }
+        }
+      }
+    }
+
+    return { idMap, nameMap, allExamples };
+  }
+
+  /**
+   * OPTIMIZED: Find example by ID or name with O(1) lookup and prefix matching
+   * Uses Map-based indexing for fast lookups with case-insensitive matching
+   */
+  private findExampleByIdOrName(
+    requests: Array<{ id: string; mockExamples: any }>,
+    exampleId?: string,
+    exampleName?: string,
+    method?: string,
+  ) {
+    // Build index maps for fast lookup
+    const { idMap, nameMap, allExamples } = this.buildExampleIndex(
+      requests,
+      method,
+    );
+
+    const normalizedId = exampleId?.toLowerCase();
+    const normalizedName = exampleName?.toLowerCase();
+
+    // O(1) exact ID match
+    if (normalizedId) {
+      const exactMatch = idMap.get(normalizedId);
+      if (exactMatch) {
+        return exactMatch;
+      }
+    }
+
+    // O(1) exact name match
+    if (normalizedName) {
+      const exactMatch = nameMap.get(normalizedName);
+      if (exactMatch) {
+        return exactMatch;
+      }
+
+      // O(n) prefix match fallback
+      // Allows matching "Health Check" with "Health"
+      for (const example of allExamples) {
+        const exampleNameLower = example.name.toLowerCase();
+        if (exampleNameLower.startsWith(normalizedName)) {
+          return example;
         }
       }
     }
@@ -923,6 +975,13 @@ export class MockServerService {
   }
 
   /**
+   * Check if a path segment is a Hoppscotch variable (<<variable>>)
+   */
+  private isPathVariable(segment: string): boolean {
+    return /^<<[^>]+>>$/.test(segment);
+  }
+
+  /**
    * OPTIMIZED: Quick check if paths could potentially match
    * Returns true if we should include this example for scoring
    */
@@ -938,13 +997,8 @@ export class MockServerService {
       return false; // Different structure, can't match
     }
 
-    // Quick check: if example has variables (Hoppscotch uses <<variable>> syntax), it could match
-    if (examplePath.includes('<<')) {
-      return true; // Has variables, needs full scoring
-    }
-
-    // No variables and not exact match = no match
-    return false;
+    // Check if any segment is a variable using proper validation
+    return exampleParts.some((part) => this.isPathVariable(part));
   }
 
   /**
@@ -969,22 +1023,34 @@ export class MockServerService {
 
     if (!rootCollection) return []; // Collection doesn't exist
 
-    const ids = [rootCollectionId];
-    const children = await this.prisma.userCollection.findMany({
-      where: { parentID: rootCollectionId },
-      select: { id: true },
-    });
+    // Use BFS to collect all descendant collection IDs
+    // This reduces N+1 queries to a single query per tree level
+    const allIds: string[] = [rootCollectionId];
+    const toProcess: string[] = [rootCollectionId];
 
-    for (const child of children) {
-      const childIds = await this.getAllUserCollectionIds(child.id);
-      ids.push(...childIds);
+    while (toProcess.length > 0) {
+      // Process current level
+      const currentLevel = [...toProcess];
+      toProcess.length = 0;
+
+      // Fetch all children for this level in a single query
+      const children = await this.prisma.userCollection.findMany({
+        where: { parentID: { in: currentLevel } },
+        select: { id: true },
+      });
+
+      // Add children to results and next processing level
+      for (const child of children) {
+        allIds.push(child.id);
+        toProcess.push(child.id);
+      }
     }
 
-    return ids;
+    return allIds;
   }
 
   /**
-   * Get all team collection IDs including children (recursive)
+   * Get all team collection IDs including children (BFS traversal)
    */
   private async getAllTeamCollectionIds(
     rootCollectionId: string,
@@ -996,18 +1062,30 @@ export class MockServerService {
 
     if (!rootCollection) return []; // Collection doesn't exist
 
-    const ids = [rootCollectionId];
-    const children = await this.prisma.teamCollection.findMany({
-      where: { parentID: rootCollectionId },
-      select: { id: true },
-    });
+    // Use BFS to collect all descendant collection IDs
+    // This reduces N+1 queries to a single query per tree level
+    const allIds: string[] = [rootCollectionId];
+    const toProcess: string[] = [rootCollectionId];
 
-    for (const child of children) {
-      const childIds = await this.getAllTeamCollectionIds(child.id);
-      ids.push(...childIds);
+    while (toProcess.length > 0) {
+      // Process current level
+      const currentLevel = [...toProcess];
+      toProcess.length = 0;
+
+      // Fetch all children for this level in a single query
+      const children = await this.prisma.teamCollection.findMany({
+        where: { parentID: { in: currentLevel } },
+        select: { id: true },
+      });
+
+      // Add children to results and next processing level
+      for (const child of children) {
+        allIds.push(child.id);
+        toProcess.push(child.id);
+      }
     }
 
-    return ids;
+    return allIds;
   }
 
   /**
@@ -1020,12 +1098,24 @@ export class MockServerService {
       const queryParams: Record<string, string> = {};
 
       if (exampleData.endpoint) {
+        // Strip out Hoppscotch host placeholder if present
+        const cleanEndpoint = exampleData.endpoint.replace(/^<<host>>/, '');
+
         const url = new URL(
-          exampleData.endpoint,
+          cleanEndpoint,
           'http://dummy.com', // Base URL for parsing
         );
         // Decode the pathname to preserve Hoppscotch variable syntax (<<variable>>)
         path = decodeURIComponent(url.pathname);
+
+        // Remove mock server prefix (/mock/{subdomain}) if present
+        // This handles cases where the full URL includes the mock server path
+        path = path.replace(/^\/mock\/[^\/]+/, '');
+
+        // Ensure path starts with /
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
 
         // Extract query parameters
         url.searchParams.forEach((value, key) => {
@@ -1102,43 +1192,38 @@ export class MockServerService {
       score -= 5;
     }
 
-    // Query parameter matching
+    // Query parameter matching (Postman algorithm)
+    // Only check params defined in the example, don't penalize extra request params
     const exampleParams = example.queryParams || {};
     const exampleParamKeys = Object.keys(exampleParams);
-    const requestParamKeys = Object.keys(requestQueryParams);
 
-    if (exampleParamKeys.length > 0 || requestParamKeys.length > 0) {
-      let paramMatches = 0;
-      let partialMatches = 0;
-      let missingParams = 0;
+    if (exampleParamKeys.length > 0) {
+      let exactMatches = 0;
 
-      // Check for matches
+      // Only check params defined in the example
       exampleParamKeys.forEach((key) => {
-        if (requestQueryParams[key] !== undefined) {
-          if (requestQueryParams[key] === exampleParams[key]) {
-            paramMatches++;
-          } else {
-            partialMatches++;
+        const requestValue = requestQueryParams[key];
+        const exampleValue = exampleParams[key];
+
+        if (requestValue !== undefined) {
+          // Normalize empty strings for comparison
+          const normalizedRequest = requestValue === '' ? '' : requestValue;
+          const normalizedExample = exampleValue === '' ? '' : exampleValue;
+
+          if (normalizedRequest === normalizedExample) {
+            exactMatches++;
           }
-        } else {
-          missingParams++;
+          // Note: Postman doesn't give partial credit for non-matching values
         }
+        // Note: Missing params don't affect score calculation in Postman algorithm
       });
 
-      // Check for extra params in request
-      requestParamKeys.forEach((key) => {
-        if (exampleParams[key] === undefined) {
-          missingParams++;
-        }
-      });
+      // Calculate score based only on example params
+      const totalExampleParams = exampleParamKeys.length;
+      const matchPercentage = (exactMatches / totalExampleParams) * 100;
 
-      // Calculate parameter matching percentage
-      const totalParams = paramMatches + partialMatches + missingParams;
-      if (totalParams > 0) {
-        const matchPercentage = (paramMatches / totalParams) * 100;
-        // Adjust score based on parameter matching
-        score = score * (matchPercentage / 100);
-      }
+      // Adjust score based on parameter matching
+      score = score * (matchPercentage / 100);
     }
 
     return score;
