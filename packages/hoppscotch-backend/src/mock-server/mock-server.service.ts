@@ -923,6 +923,13 @@ export class MockServerService {
   }
 
   /**
+   * Check if a path segment is a Hoppscotch variable (<<variable>>)
+   */
+  private isPathVariable(segment: string): boolean {
+    return /^<<[^>]+>>$/.test(segment);
+  }
+
+  /**
    * OPTIMIZED: Quick check if paths could potentially match
    * Returns true if we should include this example for scoring
    */
@@ -938,13 +945,8 @@ export class MockServerService {
       return false; // Different structure, can't match
     }
 
-    // Quick check: if example has variables (Hoppscotch uses <<variable>> syntax), it could match
-    if (examplePath.includes('<<')) {
-      return true; // Has variables, needs full scoring
-    }
-
-    // No variables and not exact match = no match
-    return false;
+    // Check if any segment is a variable using proper validation
+    return exampleParts.some((part) => this.isPathVariable(part));
   }
 
   /**
