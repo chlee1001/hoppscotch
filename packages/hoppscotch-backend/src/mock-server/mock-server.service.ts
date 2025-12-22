@@ -1020,12 +1020,24 @@ export class MockServerService {
       const queryParams: Record<string, string> = {};
 
       if (exampleData.endpoint) {
+        // Strip out Hoppscotch host placeholder if present
+        const cleanEndpoint = exampleData.endpoint.replace(/^<<host>>/, '');
+
         const url = new URL(
-          exampleData.endpoint,
+          cleanEndpoint,
           'http://dummy.com', // Base URL for parsing
         );
         // Decode the pathname to preserve Hoppscotch variable syntax (<<variable>>)
         path = decodeURIComponent(url.pathname);
+
+        // Remove mock server prefix (/mock/{subdomain}) if present
+        // This handles cases where the full URL includes the mock server path
+        path = path.replace(/^\/mock\/[^\/]+/, '');
+
+        // Ensure path starts with /
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
 
         // Extract query parameters
         url.searchParams.forEach((value, key) => {
