@@ -1140,43 +1140,40 @@ export class MockServerService {
       score -= 5;
     }
 
-    // Query parameter matching
+    // Query parameter matching (Postman algorithm)
+    // Only check params defined in the example, don't penalize extra request params
     const exampleParams = example.queryParams || {};
     const exampleParamKeys = Object.keys(exampleParams);
-    const requestParamKeys = Object.keys(requestQueryParams);
 
-    if (exampleParamKeys.length > 0 || requestParamKeys.length > 0) {
-      let paramMatches = 0;
-      let partialMatches = 0;
-      let missingParams = 0;
+    if (exampleParamKeys.length > 0) {
+      let exactMatches = 0;
+      let missingInRequest = 0;
 
-      // Check for matches
+      // Only check params defined in the example
       exampleParamKeys.forEach((key) => {
-        if (requestQueryParams[key] !== undefined) {
-          if (requestQueryParams[key] === exampleParams[key]) {
-            paramMatches++;
-          } else {
-            partialMatches++;
+        const requestValue = requestQueryParams[key];
+        const exampleValue = exampleParams[key];
+
+        if (requestValue !== undefined) {
+          // Normalize empty strings for comparison
+          const normalizedRequest = requestValue === '' ? '' : requestValue;
+          const normalizedExample = exampleValue === '' ? '' : exampleValue;
+
+          if (normalizedRequest === normalizedExample) {
+            exactMatches++;
           }
+          // Note: Postman doesn't give partial credit for non-matching values
         } else {
-          missingParams++;
+          missingInRequest++;
         }
       });
 
-      // Check for extra params in request
-      requestParamKeys.forEach((key) => {
-        if (exampleParams[key] === undefined) {
-          missingParams++;
-        }
-      });
+      // Calculate score based only on example params
+      const totalExampleParams = exampleParamKeys.length;
+      const matchPercentage = (exactMatches / totalExampleParams) * 100;
 
-      // Calculate parameter matching percentage
-      const totalParams = paramMatches + partialMatches + missingParams;
-      if (totalParams > 0) {
-        const matchPercentage = (paramMatches / totalParams) * 100;
-        // Adjust score based on parameter matching
-        score = score * (matchPercentage / 100);
-      }
+      // Adjust score based on parameter matching
+      score = score * (matchPercentage / 100);
     }
 
     return score;
