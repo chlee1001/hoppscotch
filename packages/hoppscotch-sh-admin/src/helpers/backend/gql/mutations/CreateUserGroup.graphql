@@ -1,4 +1,4 @@
-mutation CreateUserGroup($name: String!, $description: String, $role: TeamAccessRole!) {
+mutation CreateUserGroup($name: String!, $description: String, $role: UserGroupTeamAccessRole!) {
   createUserGroup(name: $name, description: $description, role: $role) {
     id
     name

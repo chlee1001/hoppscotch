@@ -34,6 +34,10 @@ import { SortTeamCollectionResolver } from './orchestration/sort/sort-team-colle
 import { SortUserCollectionResolver } from './orchestration/sort/sort-user-collection.resolver';
 import { MockServerResolver } from './mock-server/mock-server.resolver';
 import { PublishedDocsResolver } from './published-docs/published-docs.resolver';
+import { UserGroupResolver } from './user-group/user-group.resolver';
+import { UserGroupMemberResolver } from './user-group/user-group-member.resolver';
+import { UserGroupTeamAccessResolver } from './user-group/user-group-team-access.resolver';
+import { UserGroupAuditLogResolver } from './user-group/user-group-audit-log.resolver';
 
 /**
  * All the resolvers present in the application.
@@ -70,6 +74,10 @@ const RESOLVERS = [
   SortTeamCollectionResolver,
   MockServerResolver,
   PublishedDocsResolver,
+  UserGroupResolver,
+  UserGroupMemberResolver,
+  UserGroupTeamAccessResolver,
+  UserGroupAuditLogResolver,
 ];
 
 /**
