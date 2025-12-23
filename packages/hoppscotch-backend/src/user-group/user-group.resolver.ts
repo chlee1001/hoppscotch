@@ -22,6 +22,8 @@ import {
   UserGroup,
   UserGroupMember,
   UserGroupTeamAccess,
+  UserGroupAuditLog,
+  UserGroupAuditAction,
   TeamAccessRole,
   toGraphQLUserGroup,
   toGraphQLUserGroupMember,
@@ -86,6 +88,37 @@ export class UserGroupResolver {
   ): Promise<UserGroup[]> {
     const groups = await this.userGroupService.getTeamGroups(teamId);
     return groups.map(toGraphQLUserGroup);
+  }
+
+  @Query(() => [UserGroupTeamAccess], {
+    description: 'Get team access records for a group',
+  })
+  @UseGuards(GqlAuthGuard)
+  async userGroupTeamAccess(
+    @Args({ name: 'groupId', type: () => ID }) groupId: string,
+  ): Promise<UserGroupTeamAccess[]> {
+    const access = await this.userGroupService.getGroupTeamAccess(groupId);
+    return access.map(toGraphQLUserGroupTeamAccess);
+  }
+
+  @Query(() => [UserGroupAuditLog], {
+    description: 'Get audit logs for user groups',
+  })
+  @UseGuards(GqlAuthGuard, GqlSystemAdminGuard)
+  async userGroupAuditLogs(
+    @Args({ name: 'groupId', type: () => ID, nullable: true })
+    groupId?: string,
+    @Args({ name: 'action', type: () => UserGroupAuditAction, nullable: true })
+    action?: UserGroupAuditAction,
+    @Args({ name: 'limit', type: () => Int, nullable: true }) limit?: number,
+    @Args({ name: 'offset', type: () => Int, nullable: true })
+    offset?: number,
+  ): Promise<UserGroupAuditLog[]> {
+    return this.auditService.getLogs(
+      { groupId, action },
+      limit,
+      offset,
+    ) as Promise<UserGroupAuditLog[]>;
   }
 
   // Mutations
