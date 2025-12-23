@@ -21,12 +21,20 @@
       "
     >
       <div class="p-4 truncate">
-        <label
-          class="font-semibold text-secondaryDark"
-          :class="{ 'cursor-pointer': compact && team.myRole === 'OWNER' }"
-        >
-          {{ team.name || t("state.nothing_found") }}
-        </label>
+        <div class="flex items-center gap-2">
+          <label
+            class="font-semibold text-secondaryDark"
+            :class="{ 'cursor-pointer': compact && team.myRole === 'OWNER' }"
+          >
+            {{ team.name || t("state.nothing_found") }}
+          </label>
+          <icon-lucide-users
+            v-if="team.hasGroupAccess"
+            v-tippy="{ theme: 'tooltip' }"
+            :title="t('team.access_via_groups')"
+            class="svg-icons text-accent"
+          />
+        </div>
         <TeamsMemberStack :team-members="team.teamMembers" class="mt-4" />
       </div>
     </div>

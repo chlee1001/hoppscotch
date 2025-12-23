@@ -1,0 +1,11 @@
+query UserGroupTeamAccess($groupId: ID!) {
+  userGroupTeamAccess(groupId: $groupId) {
+    id
+    groupId
+    teamId
+    team {
+      id
+      name
+    }
+  }
+}

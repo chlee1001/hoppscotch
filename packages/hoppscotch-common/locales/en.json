@@ -1126,6 +1126,12 @@
     "editor": "Editor",
     "editor_description": "Editors can add, edit, and delete requests.",
     "email_verification_mail": "A verification email has been sent to your email address. Please click on the link to verify your email address.",
+    "my_groups": "My Groups",
+    "my_groups_description": "User groups you are a member of",
+    "no_groups_description": "You are not a member of any user groups yet.",
+    "team_access_via_groups": "Team Access via Groups",
+    "team_access_via_groups_description": "Teams you can access through group membership",
+    "no_team_access_via_groups": "No teams are assigned to your groups.",
     "no_permission": "You do not have permission to perform this action.",
     "owner": "Owner",
     "owner_description": "Owners can add, edit, and delete requests, collections and workspace members.",
@@ -1833,7 +1839,13 @@
     "copy_invite_link": "Copy Invite Link",
     "search_title": "Team Requests",
     "user_not_found": "User not found in the instance.",
-    "invite_members": "Invite Members"
+    "invite_members": "Invite Members",
+    "access_via_groups": "Access via user groups",
+    "roles": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    }
   },
   "team_environment": {
     "deleted": "Environment Deleted",

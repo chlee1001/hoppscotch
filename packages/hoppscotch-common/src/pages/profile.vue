@@ -163,6 +163,11 @@ const PROFILE_NAVIGATION = computed(() => [
     icon: null,
   },
   {
+    route: "/profile/groups",
+    label: t("profile.my_groups"),
+    icon: null,
+  },
+  {
     route: "/profile/tokens",
     label: t("access_tokens.tab_title"),
     icon: null,
