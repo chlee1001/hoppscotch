@@ -38,7 +38,16 @@
 
         <td class="py-2 px-7">{{ log.targetType }}</td>
 
-        <td class="py-2 px-7">{{ log.performedBy }}</td>
+        <td class="py-2 px-7">
+          <div class="flex flex-col">
+            <span class="font-medium">
+              {{ log.user?.displayName || log.user?.email || t('users.unnamed') }}
+            </span>
+            <span v-if="log.user?.displayName" class="text-xs text-secondaryLight">
+              {{ log.user.email }}
+            </span>
+          </div>
+        </td>
 
         <td class="py-2 px-7">
           {{ formatDate(log.performedAt) }}

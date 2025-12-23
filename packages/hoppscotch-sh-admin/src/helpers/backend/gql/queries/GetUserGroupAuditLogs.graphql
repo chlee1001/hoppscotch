@@ -7,5 +7,10 @@ query GetUserGroupAuditLogs($groupId: ID, $action: UserGroupAuditAction, $limit:
     performedAt
     ipAddress
     performedBy
+    user {
+      uid
+      displayName
+      email
+    }
   }
 }

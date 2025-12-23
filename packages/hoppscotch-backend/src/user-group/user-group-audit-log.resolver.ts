@@ -12,11 +12,12 @@ export class UserGroupAuditLogResolver {
 
   @ResolveField(() => User, {
     description: 'The user who performed the action',
+    nullable: true,
   })
-  async performedBy(@Parent() log: UserGroupAuditLog): Promise<User> {
+  async user(@Parent() log: UserGroupAuditLog): Promise<User | null> {
     const { performedBy: userUid } = log as any; // Prisma includes this
     const userOption = await this.userService.findUserById(userUid);
-    if (O.isNone(userOption)) throwErr(USER_NOT_FOUND);
+    if (O.isNone(userOption)) return null; // User might have been deleted
 
     return {
       ...userOption.value,

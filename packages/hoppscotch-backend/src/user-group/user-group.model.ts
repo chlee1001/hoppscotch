@@ -1,4 +1,5 @@
 import { ObjectType, Field, ID, registerEnumType } from '@nestjs/graphql';
+import { User } from '../user/user.model';
 
 // UserGroup-specific types (imported from Prisma for type safety)
 import {
@@ -220,6 +221,12 @@ export class UserGroupAuditLog {
     description: 'UID of the user who performed the action',
   })
   performedBy: string;
+
+  @Field(() => User, {
+    description: 'The user who performed the action',
+    nullable: true,
+  })
+  user?: User;
 
   @Field(() => String, {
     description: 'IP address of the performer',
