@@ -1,0 +1,9 @@
+mutation CreateUserGroup($name: String!, $description: String, $role: TeamAccessRole!) {
+  createUserGroup(name: $name, description: $description, role: $role) {
+    id
+    name
+    description
+    role
+    createdAt
+  }
+}

@@ -1,0 +1,10 @@
+query GetUserGroupTeamAccess($groupId: ID!) {
+  userGroupTeamAccess(groupId: $groupId) {
+    id
+    assignedAt
+    team {
+      id
+      name
+    }
+  }
+}

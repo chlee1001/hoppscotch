@@ -1,7 +1,14 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { TeamService } from '../../team/team.service';
 import { TeamAccessRole } from '../../team/team.model';
+import { UserGroupPermissionService } from '../../user-group/user-group-permission.service';
 import {
   BUG_TEAM_NO_REQUIRE_TEAM_ROLE,
   BUG_AUTH_NO_USER_CTX,
@@ -16,6 +23,8 @@ export class RESTTeamMemberGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly teamService: TeamService,
+    @Inject(forwardRef(() => UserGroupPermissionService))
+    private readonly userGroupPermissionService: UserGroupPermissionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -36,11 +45,17 @@ export class RESTTeamMemberGuard implements CanActivate {
     if (!teamID)
       throwHTTPErr({ message: BUG_TEAM_NO_TEAM_ID, statusCode: 400 });
 
-    const teamMember = await this.teamService.getTeamMember(teamID, user.uid);
-    if (!teamMember)
+    // Use UserGroupPermissionService to resolve role (includes direct + group membership)
+    const userRole = await this.userGroupPermissionService.resolveUserTeamRole(
+      user.uid,
+      teamID,
+    );
+
+    if (!userRole)
       throwHTTPErr({ message: TEAM_MEMBER_NOT_FOUND, statusCode: 404 });
 
-    if (requireRoles.includes(teamMember.role)) return true;
+    // Type assertion needed: Prisma enum and GraphQL enum have same values but are different types
+    if (requireRoles.includes(userRole as TeamAccessRole)) return true;
 
     throwHTTPErr({ message: TEAM_NOT_REQUIRED_ROLE, statusCode: 403 });
   }

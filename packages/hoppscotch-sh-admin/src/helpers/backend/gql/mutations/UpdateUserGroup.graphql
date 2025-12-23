@@ -1,0 +1,9 @@
+mutation UpdateUserGroup($groupId: ID!, $name: String, $description: String, $role: TeamAccessRole) {
+  updateUserGroup(groupId: $groupId, name: $name, description: $description, role: $role) {
+    id
+    name
+    description
+    role
+    updatedAt
+  }
+}

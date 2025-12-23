@@ -1,0 +1,15 @@
+query GetUserGroupAuditLogs($groupId: ID, $action: UserGroupAuditAction, $limit: Int, $offset: Int) {
+  userGroupAuditLogs(groupId: $groupId, action: $action, limit: $limit, offset: $offset) {
+    id
+    action
+    targetType
+    targetId
+    performedAt
+    ipAddress
+    performedBy {
+      uid
+      email
+      displayName
+    }
+  }
+}

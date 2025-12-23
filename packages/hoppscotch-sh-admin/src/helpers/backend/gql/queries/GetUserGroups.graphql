@@ -1,0 +1,11 @@
+query GetUserGroups($limit: Int, $offset: Int, $search: String) {
+  userGroups(limit: $limit, offset: $offset, search: $search) {
+    id
+    name
+    description
+    role
+    createdAt
+    memberCount
+    teamCount
+  }
+}
