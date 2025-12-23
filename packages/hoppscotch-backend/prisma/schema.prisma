@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Team {
-  id              String            @id @default(cuid())
+  id              String                @id @default(cuid())
   name            String
   TeamCollection  TeamCollection[]
   TeamEnvironment TeamEnvironment[]
   TeamInvitation  TeamInvitation[]
   members         TeamMember[]
   TeamRequest     TeamRequest[]
+  groupAccess     UserGroupTeamAccess[]
 }
 
 model TeamMember {
@@ -115,6 +116,7 @@ model User {
   userRequests         UserRequest[]
   settings             UserSettings?
   VerificationToken    VerificationToken[]
+  groupMemberships     UserGroupMember[]
 }
 
 model Account {
@@ -332,4 +334,105 @@ enum MockServerAction {
   DELETED
   ACTIVATED
   DEACTIVATED
+}
+
+// ============================================
+// User Groups Feature - New Models
+// ============================================
+
+model UserGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  role        TeamAccessRole
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  members     UserGroupMember[]
+  teamAccess  UserGroupTeamAccess[]
+  invitations UserGroupInvitation[]
+  auditLogs   UserGroupAuditLog[]
+
+  @@index([name])
+}
+
+model UserGroupMember {
+  id        String   @id @default(cuid())
+  userUid   String
+  groupId   String
+  isAdmin   Boolean  @default(false)
+  addedAt   DateTime @default(now()) @db.Timestamptz(3)
+  addedBy   String
+
+  user      User      @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  group     UserGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userUid, groupId])
+  @@index([groupId])
+  @@index([userUid])
+}
+
+model UserGroupTeamAccess {
+  id          String   @id @default(cuid())
+  groupId     String
+  teamId      String
+  assignedAt  DateTime @default(now()) @db.Timestamptz(3)
+  assignedBy  String
+
+  group       UserGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, teamId])
+  @@index([groupId])
+  @@index([teamId])
+}
+
+model UserGroupInvitation {
+  id           String   @id @default(cuid())
+  email        String
+  groupId      String
+  invitedBy    String
+  invitedAt    DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+
+  group        UserGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([email, groupId])
+  @@index([email])
+  @@index([groupId])
+}
+
+model UserGroupAuditLog {
+  id           String                @id @default(cuid())
+  groupId      String?
+  action       UserGroupAuditAction
+  targetType   String
+  targetId     String?
+  details      Json?
+  performedBy  String
+  performedAt  DateTime              @default(now()) @db.Timestamptz(3)
+  ipAddress    String?
+  userAgent    String?
+
+  group        UserGroup?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([groupId])
+  @@index([performedAt])
+  @@index([action])
+}
+
+enum UserGroupAuditAction {
+  GROUP_CREATED
+  GROUP_UPDATED
+  GROUP_DELETED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  MEMBER_ADMIN_GRANTED
+  MEMBER_ADMIN_REVOKED
+  TEAM_ACCESS_GRANTED
+  TEAM_ACCESS_REVOKED
+  INVITATION_SENT
+  INVITATION_ACCEPTED
+  INVITATION_EXPIRED
 }
