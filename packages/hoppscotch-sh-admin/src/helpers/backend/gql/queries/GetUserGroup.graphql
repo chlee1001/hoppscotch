@@ -1,0 +1,12 @@
+query GetUserGroup($id: ID!) {
+  userGroup(id: $id) {
+    id
+    name
+    description
+    role
+    createdAt
+    updatedAt
+    memberCount
+    teamCount
+  }
+}

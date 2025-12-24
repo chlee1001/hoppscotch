@@ -1,0 +1,25 @@
+query UserGroup($id: ID!) {
+  userGroup(id: $id) {
+    id
+    name
+    description
+    role
+    accessibleTeams {
+      id
+      name
+    }
+    members {
+      id
+      userUid
+      groupId
+      isAdmin
+      addedAt
+      user {
+        uid
+        displayName
+        email
+        photoURL
+      }
+    }
+  }
+}

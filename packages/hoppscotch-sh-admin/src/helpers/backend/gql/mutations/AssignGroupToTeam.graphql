@@ -1,0 +1,6 @@
+mutation AssignGroupToTeam($groupId: ID!, $teamId: ID!) {
+  assignGroupToTeam(groupId: $groupId, teamId: $teamId) {
+    id
+    assignedAt
+  }
+}

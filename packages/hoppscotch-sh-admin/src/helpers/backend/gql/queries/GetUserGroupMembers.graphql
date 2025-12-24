@@ -1,0 +1,12 @@
+query GetUserGroupMembers($groupId: ID!, $limit: Int, $offset: Int) {
+  userGroupMembers(groupId: $groupId, limit: $limit, offset: $offset) {
+    id
+    isAdmin
+    addedAt
+    user {
+      uid
+      email
+      displayName
+    }
+  }
+}

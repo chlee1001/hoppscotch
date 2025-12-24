@@ -1,0 +1,3 @@
+mutation DeleteUserGroup($groupId: ID!) {
+  deleteUserGroup(groupId: $groupId)
+}

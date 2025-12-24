@@ -21,12 +21,18 @@
       "
     >
       <div class="p-4 truncate">
-        <label
-          class="font-semibold text-secondaryDark"
-          :class="{ 'cursor-pointer': compact && team.myRole === 'OWNER' }"
-        >
-          {{ team.name || t("state.nothing_found") }}
-        </label>
+        <div class="flex items-center gap-2">
+          <label
+            class="font-semibold text-secondaryDark"
+            :class="{ 'cursor-pointer': compact && team.myRole === 'OWNER' }"
+          >
+            {{ team.name || t("state.nothing_found") }}
+          </label>
+          <TeamsTeamAccessBadge
+            v-if="team.myAccessInfo"
+            :access-info="team.myAccessInfo"
+          />
+        </div>
         <TeamsMemberStack :team-members="team.teamMembers" class="mt-4" />
       </div>
     </div>

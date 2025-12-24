@@ -1,0 +1,3 @@
+mutation RevokeGroupFromTeam($groupId: ID!, $teamId: ID!) {
+  revokeGroupFromTeam(groupId: $groupId, teamId: $teamId)
+}
