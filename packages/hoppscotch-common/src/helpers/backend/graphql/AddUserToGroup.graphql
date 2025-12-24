@@ -1,0 +1,15 @@
+mutation AddUserToGroup($groupId: ID!, $userUid: ID!, $isAdmin: Boolean!) {
+  addUserToGroup(groupId: $groupId, userUid: $userUid, isAdmin: $isAdmin) {
+    id
+    userUid
+    groupId
+    isAdmin
+    addedAt
+    user {
+      uid
+      displayName
+      email
+      photoURL
+    }
+  }
+}

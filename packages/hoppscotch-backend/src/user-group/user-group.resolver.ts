@@ -287,6 +287,25 @@ export class UserGroupResolver {
     }));
   }
 
+  @ResolveField(() => Boolean, {
+    description: 'Whether the current user is an admin of this group',
+  })
+  @UseGuards(GqlAuthGuard)
+  async isAdmin(
+    @Parent() group: UserGroup,
+    @GqlUser() user: AuthUser,
+  ): Promise<boolean> {
+    return this.userGroupService.isGroupAdmin(group.id, user.uid);
+  }
+
+  @ResolveField(() => [UserGroupMember], {
+    description: 'List of members in the group',
+  })
+  async members(@Parent() group: UserGroup): Promise<UserGroupMember[]> {
+    const members = await this.userGroupService.getGroupMembers(group.id);
+    return members.map(toGraphQLUserGroupMember);
+  }
+
   // Subscriptions
   @Subscription(() => UserGroup, {
     description: 'Listen to group updates',

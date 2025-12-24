@@ -4,5 +4,19 @@ query MyUserGroups {
     name
     description
     role
+    isAdmin
+    members {
+      id
+      userUid
+      groupId
+      isAdmin
+      addedAt
+      user {
+        uid
+        displayName
+        email
+        photoURL
+      }
+    }
   }
 }

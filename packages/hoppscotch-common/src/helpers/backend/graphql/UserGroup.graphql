@@ -8,5 +8,18 @@ query UserGroup($id: ID!) {
       id
       name
     }
+    members {
+      id
+      userUid
+      groupId
+      isAdmin
+      addedAt
+      user {
+        uid
+        displayName
+        email
+        photoURL
+      }
+    }
   }
 }
