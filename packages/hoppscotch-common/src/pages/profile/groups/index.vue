@@ -76,12 +76,12 @@
 
             <div class="flex items-center gap-2">
               <!-- Manage Members Button (only for admins) -->
-              <HoppButtonSecondary
-                v-if="group.isAdmin"
-                :icon="IconSettings"
-                :label="t('profile.manage_members')"
-                @click.stop="openEditMembersModal(group.id, group.name)"
-              />
+              <!--              <HoppButtonSecondary-->
+              <!--                v-if="group.isAdmin"-->
+              <!--                :icon="IconSettings"-->
+              <!--                :label="t('profile.manage_members')"-->
+              <!--                @click.stop="openEditMembersModal(group.id, group.name)"-->
+              <!--              />-->
               <icon-lucide-chevron-down
                 class="svg-icons cursor-pointer transition"
                 :class="{ 'rotate-180': expandedGroups.has(group.id) }"
@@ -194,7 +194,6 @@ import { useColorMode } from "@composables/theming"
 import * as E from "fp-ts/Either"
 import IconLucideChevronDown from "~icons/lucide/chevron-down"
 import IconLucideFolder from "~icons/lucide/folder"
-import IconSettings from "~icons/lucide/settings"
 
 import { runGQLQuery } from "~/helpers/backend/GQLClient"
 import {
@@ -373,11 +372,11 @@ const editingGroupId = ref("")
 const editingGroupName = ref("")
 
 // Open edit members modal
-const openEditMembersModal = (groupId: string, groupName: string) => {
-  editingGroupId.value = groupId
-  editingGroupName.value = groupName
-  showEditMembersModal.value = true
-}
+// const openEditMembersModal = (groupId: string, groupName: string) => {
+//   editingGroupId.value = groupId
+//   editingGroupName.value = groupName
+//   showEditMembersModal.value = true
+// }
 
 // Close modal and refresh
 const closeEditMembersModal = () => {
