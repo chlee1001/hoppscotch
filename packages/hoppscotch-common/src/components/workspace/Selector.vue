@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col">
     <div class="flex flex-col">
-      <div class="flex flex-col">
+      <div v-if="showPersonalWorkspace" class="flex flex-col">
         <HoppSmartItem
           :label="t('workspace.personal')"
           :icon="IconUser"
@@ -32,24 +32,70 @@
         </template>
       </HoppSmartPlaceholder>
       <div v-else-if="!loading" class="flex flex-col">
-        <div
-          class="sticky top-0 z-10 mb-2 flex items-center justify-between bg-popover py-2 pl-2"
-        >
-          <div class="flex items-center px-2 font-semibold text-secondaryLight">
-            {{ t("workspace.other_workspaces") }}
+        <div class="sticky top-0 z-10 mb-2 flex flex-col bg-popover py-2">
+          <div class="flex items-center justify-between pl-2">
+            <div
+              class="flex items-center px-2 font-semibold text-secondaryLight"
+            >
+              {{ t("workspace.other_workspaces") }}
+            </div>
+            <HoppButtonSecondary
+              v-tippy="{ theme: 'tooltip' }"
+              :icon="IconPlus"
+              :title="`${t('team.create_new')}`"
+              outline
+              filled
+              class="ml-8 rounded !p-0.75"
+              @click="displayModalAdd(true)"
+            />
           </div>
+          <!-- Search Input (conditional) -->
+          <div
+            v-if="showSearchInput"
+            class="flex items-center gap-2 px-2 pt-2"
+            @click.stop
+            @mousedown.stop
+          >
+            <div class="relative flex flex-1 items-center">
+              <IconSearch class="absolute left-2 h-4 w-4 text-secondaryLight" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="t('workspace.search_placeholder')"
+                :aria-label="t('workspace.search_placeholder')"
+                class="w-full rounded border border-divider bg-primaryLight py-1.5 pl-8 pr-8 text-sm text-secondaryDark focus:border-accent focus:outline-none"
+                @keydown.escape="searchQuery = ''"
+              />
+              <button
+                v-if="searchQuery"
+                type="button"
+                class="absolute right-2 text-secondaryLight hover:text-secondary"
+                :aria-label="t('action.clear')"
+                @click="searchQuery = ''"
+              >
+                <IconX class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Empty Results State -->
+        <div
+          v-if="hasNoResults"
+          class="flex flex-col items-center justify-center p-4 text-center"
+        >
+          <span class="text-secondaryLight">
+            {{ t("workspace.no_results", { query: debouncedSearchQuery }) }}
+          </span>
           <HoppButtonSecondary
-            v-tippy="{ theme: 'tooltip' }"
+            :label="t('workspace.create_team_cta')"
+            class="mt-2"
             :icon="IconPlus"
-            :title="`${t('team.create_new')}`"
-            outline
-            filled
-            class="ml-8 rounded !p-0.75"
             @click="displayModalAdd(true)"
           />
         </div>
+        <!-- Filtered Team List -->
         <HoppSmartItem
-          v-for="(team, index) in myTeams"
+          v-for="(team, index) in filteredTeams"
           :key="`team-${String(index)}`"
           :icon="IconUsers"
           :label="team.name"
@@ -90,6 +136,8 @@ import { useI18n } from "@composables/i18n"
 import IconUser from "~icons/lucide/user"
 import IconUsers from "~icons/lucide/users"
 import IconPlus from "~icons/lucide/plus"
+import IconSearch from "~icons/lucide/search"
+import IconX from "~icons/lucide/x"
 import { useColorMode } from "@composables/theming"
 import { GetMyTeamsQuery } from "~/helpers/backend/graphql"
 import IconDone from "~icons/lucide/check"
@@ -97,7 +145,7 @@ import { useLocalState } from "~/newstore/localstate"
 import { defineActionHandler, invokeAction } from "~/helpers/actions"
 import { WorkspaceService } from "~/services/workspace.service"
 import { useService } from "dioc/vue"
-import { useIntervalFn, watchDebounced } from "@vueuse/core"
+import { useIntervalFn, watchDebounced, refDebounced } from "@vueuse/core"
 import { TippyState } from "~/modules/tippy"
 
 const t = useI18n()
@@ -121,6 +169,10 @@ const isTeamListLoading = useReadonlyStream(teamListadapter.loading$, false)
 const teamListAdapterError = useReadonlyStream(teamListadapter.error$, null)
 const REMEMBERED_TEAM_ID = useLocalState("REMEMBERED_TEAM_ID")
 const teamListFetched = ref(false)
+
+// Search filter state
+const searchQuery = ref("")
+const debouncedSearchQuery = refDebounced(searchQuery, 300)
 
 const {
   pause: pauseListPoll,
@@ -178,6 +230,26 @@ const showCreateOrganizationCTA = computed(() => {
   const { organization } = platform
 
   return organization?.isDefaultCloudInstance ?? false
+})
+
+// Search filter computed properties
+const showSearchInput = computed(() => myTeams.value.length >= 0)
+
+const showPersonalWorkspace = computed(() => {
+  if (!debouncedSearchQuery.value.trim()) return true
+  const query = debouncedSearchQuery.value.toLowerCase()
+  return t("workspace.personal").toLowerCase().includes(query)
+})
+
+const filteredTeams = computed(() => {
+  if (!debouncedSearchQuery.value.trim()) return myTeams.value
+  const query = debouncedSearchQuery.value.toLowerCase()
+  return myTeams.value.filter((team) => team.name.toLowerCase().includes(query))
+})
+
+const hasNoResults = computed(() => {
+  if (!debouncedSearchQuery.value.trim()) return false
+  return !showPersonalWorkspace.value && filteredTeams.value.length === 0
 })
 
 const switchToTeamWorkspace = (team: GetMyTeamsQuery["myTeams"][number]) => {

@@ -1922,7 +1922,10 @@
     "personal": "Personal Workspace",
     "other_workspaces": "My Workspaces",
     "team": "Workspace",
-    "title": "Workspaces"
+    "title": "Workspaces",
+    "search_placeholder": "Search workspaces...",
+    "no_results": "No results for '{query}'",
+    "create_team_cta": "Create team?"
   },
   "site_protection": {
     "login_to_continue": "Login to continue",
