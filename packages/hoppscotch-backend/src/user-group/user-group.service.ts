@@ -388,4 +388,31 @@ export class UserGroupService {
     });
     return member?.isAdmin ?? false;
   }
+
+  async addMemberByEmail(
+    groupId: string,
+    email: string,
+    isAdmin: boolean,
+    adderUid: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<E.Either<string, UserGroupMember>> {
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      return E.left('USER_NOT_FOUND');
+    }
+
+    // Delegate to existing addMember method
+    return this.addMember(
+      groupId,
+      user.uid,
+      isAdmin,
+      adderUid,
+      ipAddress,
+      userAgent,
+    );
+  }
 }

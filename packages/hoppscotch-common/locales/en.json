@@ -1161,7 +1161,17 @@
     "updated": "Profile updated",
     "viewer": "Viewer",
     "viewer_description": "Viewers can only view and use requests.",
-    "verified_email_sent": "A verification email has been sent to your email address. Please refresh the page after verifying your email address. You will receive an email if this email is not associated with any other account."
+    "verified_email_sent": "A verification email has been sent to your email address. Please refresh the page after verifying your email address. You will receive an email if this email is not associated with any other account.",
+    "members_added_title": "Members Added",
+    "members_added_description": "The following members have been added to the group.",
+    "success_members": "Successfully Added",
+    "failed_members": "Failed to Add",
+    "current_members": "Current Members",
+    "add_new_members": "Add New Members",
+    "add_more_members": "Add More Members",
+    "admin_cannot_be_removed": "Admin members cannot be removed",
+    "user_not_found_by_email": "No user found with this email address",
+    "group_not_found": "Group not found"
   },
   "remove": {
     "star": "Remove star"

@@ -255,6 +255,7 @@ declare module 'vue' {
     IconLucidePlusCircle: typeof import('~icons/lucide/plus-circle')['default']
     IconLucideRss: typeof import('~icons/lucide/rss')['default']
     IconLucideSearch: typeof import('~icons/lucide/search')['default']
+    IconLucideShield: typeof import('~icons/lucide/shield')['default']
     IconLucideTerminal: typeof import('~icons/lucide/terminal')['default']
     IconLucideTriangleAlert: typeof import('~icons/lucide/triangle-alert')['default']
     IconLucideUser: typeof import('~icons/lucide/user')['default']
@@ -334,6 +335,7 @@ declare module 'vue' {
     TeamsTeamAccessBadge: typeof import('./components/teams/TeamAccessBadge.vue')['default']
     TeamsView: typeof import('./components/teams/View.vue')['default']
     Tippy: typeof import('vue-tippy')['Tippy']
+    UserGroupsEditMembers: typeof import('./components/userGroups/EditMembers.vue')['default']
     WorkspaceCurrent: typeof import('./components/workspace/Current.vue')['default']
     WorkspaceSelector: typeof import('./components/workspace/Selector.vue')['default']
   }

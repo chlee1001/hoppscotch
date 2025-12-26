@@ -204,6 +204,27 @@ export class UserGroupResolver {
     return toGraphQLUserGroupMember(result.right);
   }
 
+  @Mutation(() => UserGroupMember, {
+    description: 'Add a user to a group by email',
+  })
+  @UseGuards(GqlAuthGuard, GqlUserGroupAdminGuard)
+  async addUserToGroupByEmail(
+    @Args({ name: 'groupId', type: () => ID }) groupId: string,
+    @Args({ name: 'email', type: () => String }) email: string,
+    @Args({ name: 'isAdmin', type: () => Boolean, defaultValue: false })
+    isAdmin: boolean,
+    @GqlUser() user: AuthUser,
+  ): Promise<UserGroupMember> {
+    const result = await this.userGroupService.addMemberByEmail(
+      groupId,
+      email,
+      isAdmin,
+      user.uid,
+    );
+    if (E.isLeft(result)) throwErr(result.left);
+    return toGraphQLUserGroupMember(result.right);
+  }
+
   @Mutation(() => Boolean, {
     description: 'Remove a user from a group',
   })

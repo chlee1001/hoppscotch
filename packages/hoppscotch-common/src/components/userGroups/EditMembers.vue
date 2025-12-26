@@ -6,171 +6,255 @@
     @close="hideModal"
   >
     <template #body>
-      <div class="flex flex-col">
-        <!-- Group Name Input -->
-        <HoppSmartInput
-          v-model="groupName"
-          placeholder=" "
-          :label="t('action.label')"
-          input-styles="floating-input"
-        />
+      <!-- Result view after adding members -->
+      <div v-if="addMembersResult.length" class="flex flex-col px-4">
+        <div class="mb-8 flex max-w-md flex-col items-center justify-center">
+          <icon-lucide-users class="h-6 w-6 text-accent" />
+          <h3 class="my-2 text-center text-lg">
+            {{ t("profile.members_added_title") }}
+          </h3>
+          <p class="text-center">
+            {{ t("profile.members_added_description") }}
+          </p>
+        </div>
 
-        <div class="flex flex-1 items-center justify-between pt-4">
-          <label for="memberList" class="p-4">
-            {{ t("profile.group_members") }}
+        <!-- Success list -->
+        <div v-if="successMembers.length">
+          <label class="mb-4 block">
+            {{ t("profile.success_members") }}
+          </label>
+          <div
+            class="flex flex-col space-y-6 rounded border border-dividerLight p-4"
+          >
+            <div
+              v-for="(member, index) in successMembers"
+              :key="`member-${index}`"
+              class="flex items-center"
+            >
+              <p class="flex flex-1 items-center">
+                <icon-lucide-check-circle
+                  class="svg-icons mr-4 text-green-500"
+                />
+                <span class="truncate">{{ member.email }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Failed list -->
+        <div v-if="failedMembers.length" class="mt-6">
+          <label class="mb-4 block">
+            {{ t("profile.failed_members") }}
+          </label>
+          <div
+            class="flex flex-col space-y-6 rounded border border-dividerLight p-4"
+          >
+            <div
+              v-for="(member, index) in failedMembers"
+              :key="`member-${index}`"
+              class="flex flex-col"
+            >
+              <p class="flex items-center">
+                <icon-lucide-alert-triangle
+                  class="svg-icons mr-4 text-red-500"
+                />
+                <span class="truncate">{{ member.email }}</span>
+              </p>
+              <p class="ml-8 mt-1 text-tiny text-secondaryLight">
+                {{ getErrorMessage(member.error) }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div
+        v-else-if="addingMembers"
+        class="flex items-center justify-center p-4"
+      >
+        <HoppSmartSpinner />
+      </div>
+
+      <!-- Main view -->
+      <div v-else class="flex flex-col">
+        <!-- Group Info (Read-only) -->
+        <div
+          class="mb-4 rounded border border-dividerLight bg-primaryLight p-4"
+        >
+          <div class="flex items-center gap-2">
+            <icon-lucide-users class="svg-icons text-secondaryLight" />
+            <span class="font-semibold">{{ groupName }}</span>
+          </div>
+        </div>
+
+        <!-- Current Members Section -->
+        <div class="flex flex-1 items-center justify-between">
+          <label for="memberList" class="px-4 pb-4">
+            {{ t("profile.current_members") }}
           </label>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="groupDetails.loading" class="rounded border border-divider">
-          <div class="flex items-center justify-center p-4">
+        <div class="divide-y divide-dividerLight rounded border border-divider">
+          <!-- Loading members -->
+          <div
+            v-if="groupDetails.loading"
+            class="flex items-center justify-center p-4"
+          >
             <HoppSmartSpinner />
           </div>
-        </div>
 
-        <!-- Members Table -->
-        <div
-          v-if="
-            !groupDetails.loading &&
-            E.isRight(groupDetails.data) &&
-            groupDetails.data.right.userGroup
-          "
-          class="rounded border border-divider"
-        >
-          <HoppSmartPlaceholder
-            v-if="localMembers.length === 0 && !newMemberUid"
-            :src="`/images/states/${colorMode.value}/add_group.svg`"
-            :alt="`${t('empty.members')}`"
-            :text="t('empty.members')"
-          />
-
-          <div v-else class="divide-y divide-dividerLight">
-            <!-- Existing Members -->
+          <!-- Members list -->
+          <div v-else>
             <div
-              v-for="(member, index) in localMembers"
-              :key="`member-${index}`"
-              class="flex divide-x divide-dividerLight"
+              v-if="!groupDetails.loading && E.isRight(groupDetails.data)"
+              class="divide-y divide-dividerLight"
             >
-              <input
-                class="flex flex-1 bg-transparent px-4 py-2"
-                :placeholder="`${t('team.email')}`"
-                :name="'email' + index"
-                :value="member.user?.email || member.uid"
-                readonly
-              />
-              <span>
-                <tippy
-                  interactive
-                  trigger="click"
-                  theme="popover"
-                  :on-shown="() => tippyActions![index]?.focus()"
-                >
-                  <HoppSmartSelectWrapper>
-                    <input
-                      class="flex flex-1 cursor-pointer bg-transparent px-4 py-2"
-                      :placeholder="`${t('profile.admin_status')}`"
-                      :name="'status' + index"
-                      :value="
-                        member.isAdmin
-                          ? t('profile.group_admin')
-                          : t('profile.regular_member')
-                      "
-                      readonly
-                    />
-                  </HoppSmartSelectWrapper>
-                  <template #content="{ hide }">
-                    <div
-                      ref="tippyActions"
-                      class="flex flex-col focus:outline-none"
-                      tabindex="0"
-                      @keyup.escape="hide()"
-                    >
-                      <HoppSmartItem
-                        :label="t('profile.group_admin')"
-                        :icon="member.isAdmin ? IconCircleDot : IconCircle"
-                        :active="member.isAdmin"
-                        @click="
-                          () => {
-                            toggleLocalAdminStatus(index, true)
-                            hide()
-                          }
-                        "
-                      />
-                      <HoppSmartItem
-                        :label="t('profile.regular_member')"
-                        :icon="!member.isAdmin ? IconCircleDot : IconCircle"
-                        :active="!member.isAdmin"
-                        @click="
-                          () => {
-                            toggleLocalAdminStatus(index, false)
-                            hide()
-                          }
-                        "
-                      />
-                    </div>
-                  </template>
-                </tippy>
-              </span>
-              <div class="flex">
-                <HoppButtonSecondary
-                  v-tippy="{ theme: 'tooltip' }"
-                  :title="t('action.remove')"
-                  :icon="IconUserMinus"
-                  color="red"
-                  @click="removeLocalMember(index)"
+              <div
+                v-for="(member, index) in currentMembers"
+                :key="`member-${index}`"
+                class="flex divide-x divide-dividerLight"
+              >
+                <input
+                  class="flex flex-1 bg-transparent px-4 py-2 text-secondaryLight"
+                  :placeholder="t('team.email')"
+                  :value="member.user?.email || member.userUid"
+                  readonly
                 />
+                <input
+                  class="flex w-24 bg-transparent px-4 py-2 text-center text-secondaryLight"
+                  :value="
+                    member.isAdmin
+                      ? t('profile.group_admin')
+                      : t('profile.regular_member')
+                  "
+                  readonly
+                />
+                <div class="flex">
+                  <HoppButtonSecondary
+                    v-if="!member.isAdmin"
+                    v-tippy="{ theme: 'tooltip' }"
+                    :title="t('action.remove')"
+                    :icon="IconTrash"
+                    color="red"
+                    :loading="removingMemberIndex === index"
+                    @click="removeMember(member.userUid, index)"
+                  />
+                  <div
+                    v-else
+                    v-tippy="{ theme: 'tooltip' }"
+                    :title="t('profile.admin_cannot_be_removed')"
+                    class="flex items-center justify-center px-3 text-secondaryLight"
+                  >
+                    <icon-lucide-shield class="svg-icons" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Add New Member Row -->
-            <div class="flex divide-x divide-dividerLight">
-              <input
-                v-model="newMemberUid"
-                class="flex flex-1 bg-transparent px-4 py-2"
-                :placeholder="t('profile.add_member_uid')"
-                @keyup.enter="addLocalMember"
-              />
-              <span class="flex items-center px-4 py-2">
-                <input
-                  id="new-admin-checkbox"
-                  v-model="newMemberIsAdmin"
-                  type="checkbox"
-                  class="mr-2"
-                />
-                <label for="new-admin-checkbox" class="text-sm">
-                  {{ t("profile.make_admin") }}
-                </label>
-              </span>
-              <div class="flex">
-                <HoppButtonSecondary
-                  v-tippy="{ theme: 'tooltip' }"
-                  :title="t('action.add')"
-                  :icon="IconUserPlus"
-                  @click="addLocalMember"
-                />
-              </div>
+            <!-- Empty state -->
+            <HoppSmartPlaceholder
+              v-if="E.isRight(groupDetails.data) && currentMembers.length === 0"
+              :src="`/images/states/${colorMode.value}/add_group.svg`"
+              :alt="t('empty.members')"
+              :text="t('empty.members')"
+            />
+
+            <!-- Error state -->
+            <div
+              v-if="!groupDetails.loading && E.isLeft(groupDetails.data)"
+              class="flex flex-col items-center p-4"
+            >
+              <icon-lucide-help-circle class="svg-icons mb-4" />
+              {{ t("error.something_went_wrong") }}
             </div>
           </div>
         </div>
 
-        <!-- Error State -->
-        <div
-          v-if="!groupDetails.loading && E.isLeft(groupDetails.data)"
-          class="flex flex-col items-center"
-        >
-          <icon-lucide-help-circle class="svg-icons mb-4" />
-          {{ t("error.something_went_wrong") }}
+        <!-- Add New Members Section -->
+        <div class="flex flex-1 items-center justify-between pt-4">
+          <label for="newMemberList" class="p-4">
+            {{ t("profile.add_new_members") }}
+          </label>
+          <div class="flex">
+            <HoppButtonSecondary
+              :icon="IconPlus"
+              :label="t('add.new')"
+              filled
+              @click="addNewMemberRow"
+            />
+          </div>
+        </div>
+
+        <div class="divide-y divide-dividerLight rounded border border-divider">
+          <div
+            v-for="(invitee, index) in newMembers"
+            :key="`new-member-${index}`"
+            class="flex divide-x divide-dividerLight"
+          >
+            <input
+              v-model="invitee.email"
+              class="flex flex-1 bg-transparent px-4 py-2"
+              :placeholder="t('team.email')"
+              autofocus
+              @keyup.enter="addMembers"
+            />
+            <div class="flex">
+              <HoppButtonSecondary
+                v-tippy="{ theme: 'tooltip' }"
+                :title="t('action.remove')"
+                :icon="IconTrash"
+                color="red"
+                @click="removeNewMemberRow(index)"
+              />
+            </div>
+          </div>
+
+          <!-- Empty state for new members -->
+          <HoppSmartPlaceholder
+            v-if="newMembers.length === 0"
+            :src="`/images/states/${colorMode.value}/add_group.svg`"
+            :alt="t('empty.invites')"
+            :text="t('empty.invites')"
+          >
+            <template #body>
+              <HoppButtonSecondary
+                :label="t('add.new')"
+                filled
+                @click="addNewMemberRow"
+              />
+            </template>
+          </HoppSmartPlaceholder>
         </div>
       </div>
     </template>
 
     <template #footer>
-      <span class="flex space-x-2">
+      <!-- Footer after adding -->
+      <p
+        v-if="addMembersResult.length"
+        class="flex flex-1 justify-between text-secondaryLight"
+      >
+        <HoppButtonSecondary
+          class="link !p-0"
+          :label="t('profile.add_more_members')"
+          :icon="IconArrowLeft"
+          @click="resetAddMembersForm"
+        />
+        <HoppButtonSecondary
+          class="link !p-0"
+          :label="t('action.dismiss')"
+          @click="hideModal"
+        />
+      </p>
+
+      <!-- Default footer -->
+      <span v-else class="flex space-x-2">
         <HoppButtonPrimary
-          :label="t('action.save')"
-          :loading="isSaving"
+          :label="t('action.add')"
+          :disabled="!hasValidNewMembers"
           outline
-          @click="saveAllChanges"
+          @click="addMembers"
         />
         <HoppButtonSecondary
           :label="t('action.cancel')"
@@ -184,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue"
+import { computed, ref, watch } from "vue"
 import * as E from "fp-ts/Either"
 import { pipe } from "fp-ts/function"
 import * as TE from "fp-ts/TaskEither"
@@ -194,20 +278,18 @@ import {
   UserGroupQueryVariables,
 } from "~/helpers/backend/graphql"
 import {
-  addUserToGroup,
+  addUserToGroupByEmail,
   removeUserFromGroup,
-  updateUserGroup,
 } from "~/helpers/backend/mutations/UserGroup"
 import { useGQLQuery } from "~/composables/graphql"
 import { useI18n } from "@composables/i18n"
 import { useToast } from "@composables/toast"
 import { useColorMode } from "@composables/theming"
-import { TippyComponent } from "vue-tippy"
+import { GQLError } from "~/helpers/backend/GQLClient"
 
-import IconCircleDot from "~icons/lucide/circle-dot"
-import IconCircle from "~icons/lucide/circle"
-import IconUserPlus from "~icons/lucide/user-plus"
-import IconUserMinus from "~icons/lucide/user-minus"
+import IconPlus from "~icons/lucide/plus"
+import IconTrash from "~icons/lucide/trash"
+import IconArrowLeft from "~icons/lucide/arrow-left"
 
 const t = useI18n()
 const colorMode = useColorMode()
@@ -223,33 +305,26 @@ const props = defineProps<{
   groupName: string
 }>()
 
-// Template refs
-const tippyActions = ref<TippyComponent[] | null>(null)
+// New members to add
+const newMembers = ref<Array<{ email: string }>>([{ email: "" }])
 
-// Local state for batch editing
-const groupName = ref(props.groupName)
-const localMembers = ref<
-  Array<{
-    uid: string
-    isAdmin: boolean
-    user?: {
-      email: string | null
-      displayName: string | null
-      photoURL: string | null
-    }
-    isNew?: boolean
-    isDeleted?: boolean
-    adminChanged?: boolean
-    originalIsAdmin?: boolean
-  }>
->([])
+// Adding state
+const addingMembers = ref(false)
+const removingMemberIndex = ref<number | null>(null)
 
-// New member input
-const newMemberUid = ref("")
-const newMemberIsAdmin = ref(false)
+// Result state
+type AddMemberResult =
+  | { email: string; status: "success" }
+  | { email: string; status: "error"; error: GQLError<string> }
 
-// Saving state
-const isSaving = ref(false)
+const addMembersResult = ref<AddMemberResult[]>([])
+
+const successMembers = computed(() =>
+  addMembersResult.value.filter((m) => m.status === "success")
+)
+const failedMembers = computed(() =>
+  addMembersResult.value.filter((m) => m.status === "error")
+)
 
 // Fetch group details with members
 const groupDetails = useGQLQuery<UserGroupQuery, UserGroupQueryVariables, "">({
@@ -258,6 +333,14 @@ const groupDetails = useGQLQuery<UserGroupQuery, UserGroupQueryVariables, "">({
     id: props.groupId,
   },
   defer: true,
+})
+
+// Current members from fetched data
+const currentMembers = computed(() => {
+  if (E.isRight(groupDetails.data) && groupDetails.data.right.userGroup) {
+    return groupDetails.data.right.userGroup.members || []
+  }
+  return []
 })
 
 // Watch for groupId changes and load data
@@ -271,146 +354,118 @@ watch(
   { immediate: true }
 )
 
-// Watch for group data changes to initialize local state
-watch(
-  () => groupDetails.data,
-  (data) => {
-    if (E.isRight(data) && data.right.userGroup) {
-      const group = data.right.userGroup
-      groupName.value = group.name
-
-      // Initialize local members from fetched data
-      localMembers.value = (group.members || []).map((member: any) => ({
-        uid: member.userUid,
-        isAdmin: member.isAdmin,
-        user: member.user,
-        originalIsAdmin: member.isAdmin,
-      }))
-    }
-  }
+// Check if there are valid new members to add
+const hasValidNewMembers = computed(() =>
+  newMembers.value.some((m) => m.email.trim() !== "")
 )
 
-// Add new member to local state
-const addLocalMember = () => {
-  if (!newMemberUid.value.trim()) {
-    toast.error(t("error.invalid_input"))
+// Add new member row
+const addNewMemberRow = () => {
+  newMembers.value.push({ email: "" })
+}
+
+// Remove new member row
+const removeNewMemberRow = (index: number) => {
+  newMembers.value.splice(index, 1)
+}
+
+// Add all new members
+const addMembers = async () => {
+  const validMembers = newMembers.value.filter((m) => m.email.trim() !== "")
+
+  if (validMembers.length === 0) {
+    toast.error(t("error.incorrect_email"))
     return
   }
 
-  // Check if already exists
-  if (localMembers.value.some((m) => m.uid === newMemberUid.value)) {
-    toast.error(t("profile.member_already_exists"))
-    return
+  addingMembers.value = true
+  addMembersResult.value = []
+
+  const results: AddMemberResult[] = []
+
+  for (const member of validMembers) {
+    const result = await pipe(
+      addUserToGroupByEmail(props.groupId, member.email.trim(), false),
+      TE.match(
+        (err) => ({
+          email: member.email,
+          status: "error" as const,
+          error: err,
+        }),
+        () => ({
+          email: member.email,
+          status: "success" as const,
+        })
+      )
+    )()
+
+    results.push(result)
   }
 
-  localMembers.value.push({
-    uid: newMemberUid.value,
-    isAdmin: newMemberIsAdmin.value,
-    isNew: true,
-  })
+  addMembersResult.value = results
+  addingMembers.value = false
 
-  newMemberUid.value = ""
-  newMemberIsAdmin.value = false
-}
-
-// Remove member from local state
-const removeLocalMember = (index: number) => {
-  const member = localMembers.value[index]
-
-  if (member.isNew) {
-    // If it's a new member, just remove from local array
-    localMembers.value.splice(index, 1)
-  } else {
-    // Mark existing member as deleted
-    member.isDeleted = true
-    localMembers.value.splice(index, 1)
-  }
-}
-
-// Toggle admin status in local state
-const toggleLocalAdminStatus = (index: number, isAdmin: boolean) => {
-  const member = localMembers.value[index]
-  member.isAdmin = isAdmin
-
-  if (!member.isNew && member.originalIsAdmin !== isAdmin) {
-    member.adminChanged = true
+  // Refresh member list if any success
+  if (successMembers.value.length > 0) {
+    groupDetails.execute({ id: props.groupId })
   }
 }
 
-// Save all changes
-const saveAllChanges = async () => {
-  isSaving.value = true
+// Remove a member
+const removeMember = async (userUid: string, index: number) => {
+  removingMemberIndex.value = index
 
-  try {
-    // 1. Update group name
-    if (groupName.value !== props.groupName) {
-      await pipe(
-        updateUserGroup(props.groupId, groupName.value, undefined, undefined),
-        TE.match(
-          (err) => {
-            toast.error(t("error.something_went_wrong"))
-            console.error("Error updating group:", err)
-            return false
-          },
-          () => true
-        )
-      )()
-    }
-
-    // 2. Add new members
-    const newMembers = localMembers.value.filter((m) => m.isNew)
-    for (const member of newMembers) {
-      await pipe(
-        addUserToGroup(props.groupId, member.uid, member.isAdmin),
-        TE.match(
-          (err) => {
-            toast.error(`${t("error.something_went_wrong")}: ${member.uid}`)
-            console.error("Error adding member:", err)
-            return false
-          },
-          () => true
-        )
-      )()
-    }
-
-    // 3. Update admin status for changed members
-    const changedMembers = localMembers.value.filter(
-      (m) => m.adminChanged && !m.isNew
+  const result = await pipe(
+    removeUserFromGroup(props.groupId, userUid),
+    TE.match(
+      (err) => {
+        console.error("Error removing member:", err)
+        toast.error(t("error.something_went_wrong"))
+        return false
+      },
+      () => {
+        toast.success(t("team.member_removed"))
+        return true
+      }
     )
-    for (const member of changedMembers) {
-      // Remove and re-add with new admin status
-      await pipe(
-        removeUserFromGroup(props.groupId, member.uid),
-        TE.chain(() =>
-          addUserToGroup(props.groupId, member.uid, member.isAdmin)
-        ),
-        TE.match(
-          (err) => {
-            toast.error(
-              `${t("error.something_went_wrong")}: ${member.user?.email || member.uid}`
-            )
-            console.error("Error updating member:", err)
-            return false
-          },
-          () => true
-        )
-      )()
-    }
+  )()
 
-    // 4. Remove deleted members (tracked separately if needed)
-    // This is handled by removeLocalMember marking them as deleted
+  removingMemberIndex.value = null
 
-    toast.success(t("profile.group_updated"))
-    hideModal()
-  } catch (error) {
-    console.error("Error saving changes:", error)
-    toast.error(t("error.something_went_wrong"))
-  } finally {
-    isSaving.value = false
+  if (result) {
+    groupDetails.execute({ id: props.groupId })
   }
 }
 
+// Get error message for display
+const getErrorMessage = (error: GQLError<string>) => {
+  if (error.type === "network_error") {
+    return t("error.network_error")
+  }
+
+  const errorCode = error.error
+  switch (errorCode) {
+    case "USER_NOT_FOUND":
+      return t("profile.user_not_found_by_email")
+    case "USER_GROUP_NOT_FOUND":
+      return t("profile.group_not_found")
+    case "USER_GROUP_MEMBER_EXISTS":
+      return t("profile.member_already_exists")
+    default:
+      return t("error.something_went_wrong")
+  }
+}
+
+// Reset form to add more members
+const resetAddMembersForm = () => {
+  addMembersResult.value = []
+  newMembers.value = [{ email: "" }]
+}
+
+// Hide modal and emit event
 const hideModal = () => {
+  addMembersResult.value = []
+  newMembers.value = [{ email: "" }]
   emit("hide-modal")
 }
 </script>
