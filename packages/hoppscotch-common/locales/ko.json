@@ -1,6 +1,6 @@
 {
   "action": {
-    "add": "Add",
+    "add": "추가",
     "autoscroll": "자동 스크롤",
     "cancel": "취소",
     "choose_file": "파일 선택",
@@ -560,13 +560,28 @@
     "team_access_via_groups_description": "그룹 멤버십을 통해 접근할 수 있는 워크스페이스",
     "no_team_access_via_groups": "귀하의 그룹에 할당된 워크스페이스가 없습니다.",
     "no_permission": "이 행동에 필요한 권한이 없습니다.",
+    "manage_members": "멤버 관리",
     "owner": "소유자",
     "owner_description": "소유자는 요청과 모음집, 워크스페이스 멤버를 추가, 수정, 삭제할 수 있습니다.",
     "roles": "역할",
     "roles_description": "역할은 공유 모음집의 접근을 제어하는 데 사용됩니다.",
     "updated": "프로필이 업데이트되었습니다.",
     "viewer": "뷰어",
-    "viewer_description": "뷰어는 요청을 열고 사용할 수 있습니다."
+    "viewer_description": "뷰어는 요청을 열고 사용할 수 있습니다.",
+    "manage_group_members": "그룹 멤버 관리",
+    "group_admin": "그룹 관리자",
+    "regular_member": "일반 멤버",
+    "members_added_title": "멤버 추가 완료",
+    "members_added_description": "다음 멤버들이 그룹에 추가되었습니다.",
+    "success_members": "추가 성공",
+    "failed_members": "추가 실패",
+    "current_members": "현재 멤버",
+    "add_new_members": "새 멤버 추가",
+    "add_more_members": "더 추가하기",
+    "admin_cannot_be_removed": "관리자 멤버는 삭제할 수 없습니다",
+    "user_not_found_by_email": "해당 이메일을 가진 사용자를 찾을 수 없습니다",
+    "group_not_found": "그룹을 찾을 수 없습니다",
+    "member_already_exists": "이 그룹에 이미 멤버로 등록되어 있습니다"
   },
   "remove": {
     "star": "즐겨찾기 삭제"

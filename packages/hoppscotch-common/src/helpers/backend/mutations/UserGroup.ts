@@ -3,6 +3,9 @@ import {
   AddUserToGroupDocument,
   AddUserToGroupMutation,
   AddUserToGroupMutationVariables,
+  AddUserToGroupByEmailDocument,
+  AddUserToGroupByEmailMutation,
+  AddUserToGroupByEmailMutationVariables,
   RemoveUserFromGroupDocument,
   RemoveUserFromGroupMutation,
   RemoveUserFromGroupMutationVariables,
@@ -15,6 +18,11 @@ import {
 type AddUserToGroupErrors =
   | "user_group/not_found"
   | "user_group/user_already_member"
+
+type AddUserToGroupByEmailErrors =
+  | "user_group/not_found"
+  | "user_group/user_already_member"
+  | "user/not_found"
 
 type RemoveUserFromGroupErrors =
   | "user_group/not_found"
@@ -34,6 +42,21 @@ export const addUserToGroup = (
   >(AddUserToGroupDocument, {
     groupId,
     userUid,
+    isAdmin,
+  })
+
+export const addUserToGroupByEmail = (
+  groupId: string,
+  email: string,
+  isAdmin: boolean
+) =>
+  runMutation<
+    AddUserToGroupByEmailMutation,
+    AddUserToGroupByEmailMutationVariables,
+    AddUserToGroupByEmailErrors
+  >(AddUserToGroupByEmailDocument, {
+    groupId,
+    email,
     isAdmin,
   })
 

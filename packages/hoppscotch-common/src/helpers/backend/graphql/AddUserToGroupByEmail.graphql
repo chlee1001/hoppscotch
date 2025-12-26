@@ -1,0 +1,15 @@
+mutation AddUserToGroupByEmail($groupId: ID!, $email: String!, $isAdmin: Boolean!) {
+  addUserToGroupByEmail(groupId: $groupId, email: $email, isAdmin: $isAdmin) {
+    id
+    userUid
+    groupId
+    isAdmin
+    addedAt
+    user {
+      uid
+      displayName
+      email
+      photoURL
+    }
+  }
+}
