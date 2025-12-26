@@ -1075,7 +1075,10 @@
     "personal": "내 워크스페이스",
     "other_workspaces": "내 워크스페이스",
     "team": "워크스페이스",
-    "title": "워크스페이스"
+    "title": "워크스페이스",
+    "search_placeholder": "워크스페이스 검색...",
+    "no_results": "'{query}'에 대한 결과 없음",
+    "create_team_cta": "팀 생성하기"
   },
   "site_protection": {
     "login_to_continue": "Login to continue",
